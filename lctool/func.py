@@ -2,7 +2,8 @@ import re
 import json
 import urllib
 import requests
-import os.path
+import datetime
+import os
 import textwrap
 import time
 import shutil
@@ -119,6 +120,12 @@ class lctool:
             res = res.json()
         if res[u'status_runtime'] != 'N/A':
             tmp = abspath.split('/')
-            dst = '/'.join(tmp[:-1]) + '/' + '-DONE.'.join(tmp[-1].split('.'))
-            shutil.move(abspath, dst)
+            #dst = '/'.join(tmp[:-1]) + '/' + '-DONE.'.join(tmp[-1].split('.'))
+            dst_dir = '/'.join(tmp[:-1]) + '/' + ''.join( tmp[-1].split('.')[0] )
+            now = datetime.datetime.now()
+            timestamp = str(now.year) + '-' + str(now.month) + '-' + str(now.day) + '_' + str(now.hour) + '-' + str(now.minute) + '-' + str(now.second)
+            dst = dst_dir + '/' + ('-DONE-' + timestamp + '.').join(tmp[-1].split('.'))
+            if not os.path.exists(dst_dir):
+                os.mkdir(dst_dir)
+            shutil.copy(abspath, dst)
         return res
