@@ -1,0 +1,4 @@
+build/
+dist/
+lctool.egg-info/
+lctool/version.py

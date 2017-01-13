@@ -1,6 +1,7 @@
 import re
 import json
 import urllib
+import urllib2
 import requests
 import datetime
 import os
@@ -19,8 +20,10 @@ class lctool:
         self.password = ''
 
     def get_tag_list(self):
+        opener = urllib2.build_opener()
+        opener.addheaders = [('User-agent', 'Chrome/55.0.2883.95')]
         url = self.baseurl + 'problemset/algorithms/'
-        f = urllib.urlopen(url)
+        f = opener.open(url).read()
         soup = BeautifulSoup(f)
         taglistinfo = soup.findAll('a', href=re.compile('^/tag/.*'))
         taglist = []
@@ -32,8 +35,12 @@ class lctool:
     def get_problem_list(self, tag=None):
         if not tag:
             return
+
+        opener = urllib2.build_opener()
+        opener.addheaders = [('User-agent', 'Chrome/55.0.2883.95')]
+
         url = self.baseurl + '/tag/' + tag
-        f = urllib.urlopen(url).read()
+        f = opener.open(url).read()
         pattern = re.compile('.*/problems/.*')
         found = re.findall(pattern, f)
         problem_list = [tt.split('/problems/')[-1].split(u'/')[0] for tt in found if "Pick" not in tt]
@@ -41,7 +48,9 @@ class lctool:
 
     def get_problem(self, problem):
         url = self.baseurl + '/problems/' + problem
-        f = urllib.urlopen(url)
+        opener = urllib2.build_opener()
+        opener.addheaders = [('User-agent', 'Chrome/55.0.2883.95')]
+        f = opener.open(url).read()
         soup = BeautifulSoup(f)
         try:
             mydiv = soup.findAll("div", { "class" : "question-content" }).pop()
@@ -58,7 +67,10 @@ class lctool:
 
     def get_problem_source(self, problem, language='C++'):
         url = self.baseurl + '/problems/' + problem
-        f = urllib.urlopen(url)
+        opener = urllib2.build_opener()
+        opener.addheaders = [('User-agent', 'Chrome/55.0.2883.95')]
+        f = opener.open(url).read()
+
         soup = BeautifulSoup(f)
         mydivs = soup.findAll("div", { "class" : "container" })
         codes = []
@@ -91,10 +103,13 @@ class lctool:
         problem = abspath.split('/')[-1].split('.')[0]
         url = self.baseurl + '/problems/' + problem
         client = requests.session()
-        tmp = client.get(self.loginurl)
+        tmp = client.get(self.loginurl, headers={'User-agent': 'Chrome/55.0.2883.95'})
         payloadl = {'csrfmiddlewaretoken':client.cookies['csrftoken'],
                 'login': self.username, 'password': self.password}
-        midres = client.post(self.loginurl, data = payloadl, headers = dict(referer=self.loginurl))
+        h = dict(referer=self.loginurl)
+        h['User-agent'] = 'Chrome/55.0.2883.95'
+        midres = client.post(self.loginurl, data = payloadl, headers = h)
+
         url_submit = url + '/submit'
         payload = {}
         _, qid, lang = self.get_problem_source(problem)
@@ -104,11 +119,11 @@ class lctool:
         payload['typed_code'] = 'dummy'
         with open(abspath) as f:
             payload['typed_code'] = f.read()
-        tmp = client.get(url_submit)
+        tmp = client.get(url_submit, headers={'User-agent': 'Chrome/55.0.2883.95'})
         cookie_str = ''
         for c in client.cookies.keys():
             cookie_str += c + '=' + client.cookies[c] + ';'
-        headers = {'X-CSRFToken': client.cookies['csrftoken'], 'Referer': url, 'Cookie': cookie_str}
+        headers = {'X-CSRFToken': client.cookies['csrftoken'], 'Referer': url, 'Cookie': cookie_str, 'User-agent': 'Chrome/55.0.2883.95'}
         midres1 = client.post(url_submit, data = json.dumps(payload), headers=headers)
         submission = midres1.json()
         sid = submission[u'submission_id']
